@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<openerp>
+	<data>
+		<record id="product_import_form" model="ir.ui.view">
+			<field name="name">product_import.form</field>
+			<field name="model">product.import</field>
+			<field name="arch" type="xml">
+				<form string="description">
+					<header>
+						<button name="action_process" states="draft,process" string="Process" type="object"/>
+						<button name="update_data"  states="process" string="Update" type="object"/>
+
+						<button name="create_data" states="process" string="Create" type="object"/>
+						<button name="action_done" states="process" string="Done" type="object"/>
+						<button name="action_cancel" states="draft,process" string="Cancel" type="object"/>
+
+						<field name="state" widget="statusbar"/>
+					</header>
+					<sheet>
+						<h1>
+							<field name="config_id" readonly="True"/>
+						</h1>
+						<group>
+							<field name="file_ids" widget="many2many_binary"/>
+
+						</group>
+						<group col="2">
+							<field name="created" readonly="True"/>
+							<field name="updated" readonly="True"/>
+
+						</group>
+						<group string="Update">
+							<span>
+								<field field_value="parsed_value" field_x_axis="field_id" field_y_axis="product_id" name="write_values_ids" widget="x2many_2d_matrix"/>
+							</span>
+						</group>
+						<group string="Create">
+							<span>
+								<field field_value="parsed_value" field_x_axis="field_id" field_y_axis="unic" name="create_values_ids" widget="x2many_2d_matrix"/>
+							</span>
+						</group>
+					</sheet>
+				</form>
+			</field>
+		</record>
+	</data>
+</openerp>
