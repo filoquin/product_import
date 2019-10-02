@@ -41,6 +41,8 @@ class product_import(models.Model):
     state = fields.Selection(
         [('draft', 'draft'), 
          ('process', 'process'), 
+         ('updated', 'updated'), 
+         ('created', 'created'), 
          ('done', 'done'),
          ('cancel', 'cancel')],
         string='state',
@@ -59,7 +61,7 @@ class product_import(models.Model):
         'import_id',
         string='Serialized',
     )
-
+    
     create_values_ids = fields.One2many(
         'product.import.field_values',
         'import_id',
@@ -72,6 +74,9 @@ class product_import(models.Model):
         'import_id',
         string='Update',
         domain=[('event','=','write')]
+    )
+    error = fields.Text(
+        string='Error',
     )
     created = fields.Boolean(
         string='Create execute',
@@ -86,30 +91,75 @@ class product_import(models.Model):
         default = True
     )
 
+    product_ids = fields.Many2many(
+        'product.product',
+        string='Products',
+    )
+
     @api.model
     def cast_field_value(self,field, value):
-        if field.ttype == 'float':
-            return float(value)
-        if field.ttype == 'integer':
-            return int(value)
-        if field.ttype == 'boolean':
-            return bool(value)
-        if field.ttype in ['char','text','html']:
-            if type(value) == unicode:
-                return value.encode('utf-8','ignore')
-            return str(value)
-        if field.ttype =='many2one':
-            if type(value) == unicode:
-                value = value.encode('utf-8','ignore')
-            return str(value).rstrip().lstrip()
+        try:
+            if field.ttype == 'float':
+                return float(value)
+            if field.ttype == 'integer':
+                return int(value)
+            if field.ttype == 'boolean':
+                return bool(value)
+            if field.ttype in ['char','text','html']:
+                if type(value) == unicode:
+                    return value.encode('utf-8','ignore')
+                return str(value)
+            if field.ttype =='many2one':
+                if type(value) == unicode:
+                    value = value.encode('utf-8','ignore')
+                return str(value).rstrip().lstrip()
 
-        if field.ttype in ['one2many']:
-            if type(value) == unicode:
-                return value.encode('utf-8','ignore')
-            v = [x.rstrip().lstrip() for x in ','.split(value)]
-            return ','.join(v)
+            if field.ttype in ['one2many']:
+                if type(value) == unicode:
+                    return value.encode('utf-8','ignore')
+                v = [x.rstrip().lstrip() for x in ','.split(value)]
+                return ','.join(v)
+            
+        except :
+            return False
+
+    @api.multi
+    def action_list(self):
+        self.ensure_one()
+        view_id = self.env.ref('product_import.product_import_tree') 
+        view = { 
+            'name':"Product",
+            'view_mode': 'tree',
+            'view_id': view_id.id,
+            'view_type': 'form',
+            'res_model': 'product.product',
+            'type': 'ir.actions.act_window',
+            'nodestroy': True,
+            'target': 'self',
+            'domain': "[('id','in',%r)]"%(self.product_ids.ids),
+        }
+        return view
+
+
+    @api.multi
+    def action_import(self):
+        self.ensure_one()
+        view_id = self.env.ref('product_import.product_import_form')
         
-        return value
+        return {
+            'name': _("Import ") ,
+            'view_type': 'form',
+            'view_mode': 'form',
+            'res_model': 'product.import',
+            'res_id': self.id,
+            'view_id': view_id.id,
+            'type': 'ir.actions.act_window',
+            'context': {'default_config_id':self.id},
+            'nodestroy': True,
+            'domain': [],
+        }
+
+
 
     @api.model
     def prepare_field_value(self,field, value):
@@ -146,14 +196,24 @@ class product_import(models.Model):
 
     @api.one 
     def update_data(self):
+        product_ids = [] 
+        error_lines = []
+
         product_vals = {}
         supplier_vals = {}
+        packaging_vals = {}
         product_list = {}
         for row in self.write_values_ids:
             if row.field_id.model_id.model =='product.supplierinfo':
                 if row.product_id.id not in supplier_vals:
                     supplier_vals[row.product_id.id] = {}
                 supplier_vals[row.product_id.id][row.field_id.name]=self.prepare_field_value(row.field_id,row.parsed_value)
+
+            if row.field_id.model_id.model =='product.packaging':
+                if row.product_id.id not in packaging_vals:
+                    packaging_vals[row.product_id.id] = {}
+                packaging_vals[row.product_id.id][row.field_id.name]=self.prepare_field_value(row.field_id,row.parsed_value)
+
 
             else:
                 if row.product_id.id not in product_vals:
@@ -162,24 +222,59 @@ class product_import(models.Model):
                 product_vals[row.product_id.id][row.field_id.name]=self.prepare_field_value(row.field_id,row.parsed_value)
 
         for product in product_vals:
-            write_product = product_list[product].write(product_vals[product])
-            """if self.config_id.supplierinfo:
-                supplier_vals['product_tmpl_id']=new_product.product_tmpl_id.id
-                supplier_vals['name']=self.config_id.partner_id.id
-                if 'product_code' not in supplier_vals:
-                    supplier_vals['product_code']=new_product.default_code
-                if 'product_name' not in supplier_vals:
-                    supplier_vals['product_name']=new_product.name
+            try:
+                if product in packaging_vals and 'ean' in packaging_vals[product] :
+                    pack_id = 0
+                    for packaging_id in product_list[row.product_id.id].packaging_ids:
+                        if packaging_id.ean == packaging_vals[product]['ean']:
+                            pack_id = packaging_id.id
+                    if pack_id !=0:
+                        product_vals[product]['packaging_ids']=[(1,pack_id,packaging_vals[product])]
+                    else:
+                        product_vals[product]['packaging_ids']=[(0,0,packaging_vals[product])]
+
+                if 'update_supplierinfo' in self.env.context:
+                    if 'product_code' not in supplier_vals:
+                        supplier_vals[product]['product_code']=product_list[product].default_code
+                    if 'product_name' not in supplier_vals:
+                        supplier_vals[product]['product_name']=product_list[product].name
+                    supplier_vals[product]['name']=self.config_id.partner_id.id
+                    supplierinfo_id = 0
+                    for seller_id in product_list[row.product_id.id].seller_ids:
+                        if seller_id.name.id == self.config_id.partner_id.id:
+                            supplierinfo_id = seller_id.id
+                    if supplierinfo_id!=0:
+                        product_vals[product]['seller_ids']=[(1,supplierinfo_id,supplier_vals[product])]
+                    else:
+                        product_vals[product]['seller_ids']=[(0,0,supplier_vals[product])]
 
 
-            break
-            """
+                _logger.info(product_vals[product])
+                product_list[product].write(product_vals[product])
+
+                product_ids.append(product)
+            except Exception as e:
+                        error_lines.append('%r'%e)
+                        for line in product_vals[product]:
+                            error_lines.append('%r : %r'%(line, product_vals[product][line]))
+                        error_lines.append('-------------------')
+
+
+
+        _logger.info([(4,x) for x in product_ids])
+        self.product_ids= [(4,x) for x in product_ids]
         self.updated=True
+        self.state="updated"
+        self.error = '\n'.join(error_lines)
 
     @api.one 
     def create_data(self):
         product_vals = {}
         supplier_vals = {}
+        error_lines = []
+        product_ids = [] 
+
+
         for row in self.create_values_ids:
             if row.field_id.model_id.model =='product.supplierinfo':
                 if row.unic not in supplier_vals:
@@ -192,6 +287,9 @@ class product_import(models.Model):
                 product_vals[row.unic][row.field_id.name]=self.prepare_field_value(row.field_id,row.parsed_value)
         for product in product_vals:
             try:
+                if 'categ_id' not in product_vals[product] and len(self.config_id.default_categ_id):
+                    product_vals[product]['categ_id'] = self.config_id.default_categ_id.id
+
                 new_product = self.env['product.product'].create(product_vals[product])
                 if self.config_id.supplierinfo:
                     supplier_vals[product]['product_tmpl_id']=new_product.product_tmpl_id.id
@@ -202,15 +300,30 @@ class product_import(models.Model):
                         supplier_vals[product]['product_name']=new_product.name
                     _logger.info('supplier_vals %r'%supplier_vals[product])
                     self.env['product.supplierinfo'].create(supplier_vals[product])
-            except:
-                _logger.info('error')
+                
+                product_ids.append(product)
+
+
+            except Exception as e:
+                    error_lines.append('%r'%e)
+                    error_lines.append('%r'%product_vals)
+                    error_lines.append('%r'%supplier_vals)
+                    error_lines.append('-------------------')
+
         self.created=True
+        self.state="created"
+        self.products = [(4,x.id) for x in product_ids]
+        self.error = '\n'.join(error_lines)
+    @api.one 
+    def action_done(self):
+        self.state="done"
 
     @api.one 
     def action_process(self):
         self.write_values_ids.unlink()
         self.create_values_ids.unlink()
-        self.serialized_values_ids.unlink()
+        self.error = ''
+        #self.serialized_values_ids.unlink()
         if self.config_id.file_format == 'csv':
             self.process_csv()
         elif self.config_id.file_format == 'xls':
@@ -224,13 +337,19 @@ class product_import(models.Model):
             sheet_names = book.sheet_names()
             sheet_names = [x.lower() for x in sheet_names ]
             for sheet in  self.config_id.sheet_ids:
-                if sheet.name.lower() in sheet_names:
-                    sheet=book.sheet_by_index(sheet_names.index(sheet.name.lower()))
+                _logger.info(sheet.name.lower())
+                
+                if sheet.name.lower() in sheet_names  or sheet.name.isnumeric():
+
+                    index = int(sheet.name)-1 if sheet.name.isnumeric() else sheet_names.index(sheet.name.lower())
+                    sheet=book.sheet_by_index(index)
                     for i in range(sheet.nrows):
+
                         if i < self.config_id.start_line:
                             continue
                         r = [cell.value for cell in sheet.row(i)] 
                         
+                        _logger.info(r)
                         self.process_row(r)
 
     @api.one
@@ -250,6 +369,8 @@ class product_import(models.Model):
     def process_row(self,row):
         res = {}
         leaf = [('active','=',True)]
+        if self.config_id.match_supplier:
+            leaf.append(('seller_ids.name','=',self.config_id.partner_id.id))
         rowlen = len(row)
         for field in self.config_id.field_ids:
             if rowlen < field.column:
@@ -344,7 +465,7 @@ class product_import_serialized_values(models.Model):
         'product.product',
         string='product',
     )
-    unic = fields.Char(
+    unic =  fields.Char(
         string='unic',
         index = True,
     )
@@ -449,8 +570,16 @@ class product_import_config(models.Model):
         required=False,
     )
     supplierinfo = fields.Boolean(
-        string='Add supplierinfo',
+        string='Add supplier info',
         default = True
+    )
+    match_supplier = fields.Boolean(
+        string='match supplier',
+        default = True
+    )
+    default_categ_id = fields.Many2one(
+        'product.category',
+        string='Default category',
     )
 
     active = fields.Boolean(

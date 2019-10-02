@@ -43,6 +43,7 @@
 											<field name="create_uid"/>
 											<field name="file_ids"/>
 											<field name="state"/>
+											<button name="action_import"  string="Open" type="object" />
 										</tree>
 									</field>
 								</span>
@@ -74,6 +75,9 @@
 								<group>
 									<field name="context"/>
 									<field name="supplierinfo"/>
+									<field name="match_supplier"/>
+									<field name="default_categ_id"/>
+									
 								</group>
 							</page>
 						</notebook>
@@ -98,7 +102,7 @@
 			<field name="view_type">form</field>
 			<field name="view_mode">tree,form</field>
 		</record>
-		<menuitem action="action_product_import_config" id="product_import_config_menu" parent="stock.menu_stock_product"/>
+		<menuitem action="action_product_import_config" id="product_import_config_menu" parent="purchase.menu_procurement_management_product"/>
 		<record id="product_import_preprocessed_form" model="ir.ui.view">
 			<field name="name">product_import_preprocessed.form</field>
 			<field name="model">product.import.preprocessed</field>
@@ -121,7 +125,7 @@
 					<sheet>
 						<group>
 							<field name="name"/>
-							<field domain="[('model_id.model', 'in', ['product.supplierinfo','product.product'])]" name="field_id"/>
+							<field domain="[('model_id.model', 'in', ['product.supplierinfo','product.product','product.packaging'])]" name="field_id"/>
 							<field name="preprocessed_id"/>
 						</group>
 					</sheet>
