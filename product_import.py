@@ -290,33 +290,44 @@ class product_import(models.Model):
                 if 'categ_id' not in product_vals[product] and len(self.config_id.default_categ_id):
                     product_vals[product]['categ_id'] = self.config_id.default_categ_id.id
 
-                new_product = self.env['product.product'].create(product_vals[product])
                 if self.config_id.supplierinfo:
-                    supplier_vals[product]['product_tmpl_id']=new_product.product_tmpl_id.id
+                    #supplier_vals[product]['product_tmpl_id']=new_product.product_tmpl_id.id
                     supplier_vals[product]['name']=self.config_id.partner_id.id
                     if 'product_code' not in supplier_vals[product]:
-                        supplier_vals[product]['product_code']=new_product.default_code
+                        supplier_vals[product]['product_code']=product_vals[product]['default_code']
                     if 'product_name' not in supplier_vals[product]:
-                        supplier_vals[product]['product_name']=new_product.name
-                    _logger.info('supplier_vals %r'%supplier_vals[product])
-                    self.env['product.supplierinfo'].create(supplier_vals[product])
+                        supplier_vals[product]['product_name']=product_vals[product]['name']
+                    product_vals[product]['seller_ids']=[(0,0,supplier_vals[product])]
+
+                    #_logger.info('supplier_vals %r'%supplier_vals[product])
+                    #self.env['product.supplierinfo'].create(supplier_vals[product])
+
+                new_product = self.env['product.product'].create(product_vals[product])
                 
-                product_ids.append(product)
+                product_ids.append(new_product.id)
 
 
             except Exception as e:
-                    error_lines.append('%r'%e)
-                    error_lines.append('%r'%product_vals)
-                    error_lines.append('%r'%supplier_vals)
-                    error_lines.append('-------------------')
+
+                error_lines.append('%r'%e)
+                for line in product_vals[product]:
+                    error_lines.append('%r : %r'%(line, product_vals[product][line]))
+                for line in supplier_vals[product]:
+                    error_lines.append('%r : %r'%(line, supplier_vals[product][line]))
+                error_lines.append('-------------------')
 
         self.created=True
         self.state="created"
-        self.products = [(4,x.id) for x in product_ids]
-        self.error = '\n'.join(error_lines)
+        _logger.info([(4,x) for x in product_ids])
+        self.product_ids= [(4,x) for x in product_ids]
+        self.error =  self.error + '\n'.join(error_lines)
     @api.one 
     def action_done(self):
         self.state="done"
+    @api.one 
+    def action_restart(self):
+        self.error =  ''
+        self.state="draft"
 
     @api.one 
     def action_process(self):

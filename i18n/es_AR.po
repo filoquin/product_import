@@ -6,19 +6,19 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 8.0-20171009\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2019-09-30 10:55+0000\n"
-"PO-Revision-Date: 2019-09-30 08:09-0300\n"
+"POT-Creation-Date: 2019-10-14 11:07+0000\n"
+"PO-Revision-Date: 2019-10-14 08:11-0300\n"
+"Last-Translator: <>\n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=2; plural=(n != 1);\n"
-"X-Generator: Poedit 2.0.6\n"
-"Last-Translator: \n"
+"Plural-Forms: \n"
 "Language: es_AR\n"
+"X-Generator: Poedit 2.0.6\n"
 
 #. module: product_import
-#: code:addons/product_import/product_import.py:521
+#: code:addons/product_import/product_import.py:630
 #, python-format
 msgid ""
 "\n"
@@ -50,7 +50,7 @@ msgstr ""
 "# Return is a float in variable return_value"
 
 #. module: product_import
-#: code:addons/product_import/product_import.py:589
+#: code:addons/product_import/product_import.py:698
 #, python-format
 msgid "'%s' is not a valid value for '%s'."
 msgstr "'%s' No es un valor valido para '%s'."
@@ -168,14 +168,14 @@ msgid "Error"
 msgstr "Error"
 
 #. module: product_import
-#: code:addons/product_import/product_import.py:584
+#: code:addons/product_import/product_import.py:693
 #, python-format
 msgid ""
 "Error when evaluating %s. Please check validation code.\n"
 "Error:\n"
 "%s"
 msgstr ""
-"Error when evaluating %s. Please check validation code.\n"
+"Error en la evaluacion de  %s. verificar el codigo de .\n"
 "Error:\n"
 "%s"
 
@@ -223,7 +223,13 @@ msgid "Import"
 msgstr "Importar"
 
 #. module: product_import
-#: code:addons/product_import/product_import.py:499
+#: code:addons/product_import/product_import.py:150
+#, python-format
+msgid "Import "
+msgstr "Importar"
+
+#. module: product_import
+#: code:addons/product_import/product_import.py:608
 #, python-format
 msgid "Import '%s'"
 msgstr "Importar '%s'"
@@ -232,6 +238,11 @@ msgstr "Importar '%s'"
 #: field:product.import.config,import_ids:0
 msgid "Imports"
 msgstr "Importaciones"
+
+#. module: product_import
+#: view:product.import:product_import.product_import_form
+msgid "Insert new"
+msgstr "Agregar nuevos"
 
 #. module: product_import
 #: field:product.import,__last_update:0
@@ -276,9 +287,29 @@ msgid "Name"
 msgstr "Nombre"
 
 #. module: product_import
+#: view:product.import:product_import.product_import_create_form
+msgid "New"
+msgstr "Nuevo"
+
+#. module: product_import
+#: view:product.import.config:product_import.product_import_config_form
+msgid "Open"
+msgstr "Abierto"
+
+#. module: product_import
 #: view:product.import:product_import.product_import_form
 msgid "Process"
 msgstr "Procesar"
+
+#. module: product_import
+#: view:product.import:product_import.product_import_form
+msgid "Productos"
+msgstr "Productos"
+
+#. module: product_import
+#: field:product.import,product_ids:0
+msgid "Products"
+msgstr "Productos"
 
 #. module: product_import
 #: field:product.import.config.column,required:0
@@ -307,6 +338,7 @@ msgstr "Proveedor"
 
 #. module: product_import
 #: view:product.import:product_import.product_import_form
+#: view:product.import:product_import.product_import_update_form
 #: field:product.import,write_values_ids:0
 msgid "Update"
 msgstr "Actualizar"
@@ -315,6 +347,16 @@ msgstr "Actualizar"
 #: field:product.import,updated:0
 msgid "Update execute"
 msgstr "Iniciar Actualización"
+
+#. module: product_import
+#: view:product.import:product_import.product_import_form
+msgid "Update product & supplier"
+msgstr "Actualizar  productos y prov"
+
+#. module: product_import
+#: view:product.import:product_import.product_import_form
+msgid "Update products"
+msgstr "Actualizar solo productos"
 
 #. module: product_import
 #: field:product.import.field_values,parsed_value:0
@@ -348,6 +390,11 @@ msgid "create"
 msgstr "Crear"
 
 #. module: product_import
+#: selection:product.import,state:0
+msgid "created"
+msgstr "creado"
+
+#. module: product_import
 #: selection:product.import.config,file_format:0
 msgid "csv"
 msgstr "CSV"
@@ -368,7 +415,9 @@ msgid "default values"
 msgstr "Valores por defecto"
 
 #. module: product_import
+#: view:product.import:product_import.product_import_create_form
 #: view:product.import:product_import.product_import_form
+#: view:product.import:product_import.product_import_update_form
 #: view:product.import.config.field:product_import.product_import_config_field_form
 #: view:product.import.preprocessed:product_import.product_import_preprocessed_form
 msgid "description"
@@ -415,6 +464,11 @@ msgstr "Nombre"
 #: field:product.import.config.field,preprocessed_id:0
 msgid "preproces"
 msgstr "Pre-procesar"
+
+#. module: product_import
+#: view:product.product:product_import.product_import_tree
+msgid "prices"
+msgstr "Precios"
 
 #. module: product_import
 #: selection:product.import,state:0
@@ -464,6 +518,11 @@ msgid "product import sheet"
 msgstr "Hoja"
 
 #. module: product_import
+#: view:product.import:product_import.product_import_form
+msgid "restart"
+msgstr "Reiniciar"
+
+#. module: product_import
 #: field:product.import.config,start_line:0
 msgid "start line"
 msgstr "Linea de inicio "
@@ -480,9 +539,19 @@ msgid "unic"
 msgstr "Unico"
 
 #. module: product_import
+#: selection:product.import,state:0
+msgid "updated"
+msgstr "Actualizados"
+
+#. module: product_import
 #: field:product.import.config.default_values,field_value:0
 msgid "value"
 msgstr "Valor"
+
+#. module: product_import
+#: view:product.import:product_import.product_import_form
+msgid "view products"
+msgstr "Ver productos"
 
 #. module: product_import
 #: selection:product.import.field_values,event:0

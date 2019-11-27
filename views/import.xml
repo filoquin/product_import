@@ -14,6 +14,7 @@
 
 						<button name="create_data" states="updated" string="Insert new" type="object"/>
 						<button name="action_done" states="updated,created" string="Done" type="object"/>
+						<button name="action_restart" states="updated,created" string="restart" type="object"/>
 						<button name="action_cancel" states="draft,process" string="Cancel" type="object"/>
 						<button name="action_list" states="done" string="view products" type="object"/>
 
